@@ -170,14 +170,12 @@ Included when `CURSOR_API_KEY` is set. Uses the official API:
 
 Agents are filtered to `cmiecz/waypathacademics` when repo metadata is present. If the key is unset, the panel is hidden (demo mode shows sample agents).
 
-## Scripts
+## Demo screenshots
 
-```bash
-npm test          # vitest
-npm run build     # compile TypeScript to dist/
-npm start         # node dist/index.js
-npm run dev       # tsx watch (local)
-```
+Captured with `DEMO_MODE=true`:
+
+- [`docs/screenshots/dashboard-demo-desktop.png`](docs/screenshots/dashboard-demo-desktop.png)
+- [`docs/screenshots/dashboard-demo-mobile.png`](docs/screenshots/dashboard-demo-mobile.png)
 
 ## Stage labels
 
