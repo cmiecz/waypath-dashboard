@@ -39,6 +39,26 @@ body {
   padding: 0 1rem 2.5rem;
 }
 
+/* Dark-theme link defaults — never fall back to browser blue/purple */
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+
+a:visited {
+  color: var(--accent-2);
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
 .hidden {
   display: none !important;
 }
@@ -169,8 +189,19 @@ body {
   border: none;
 }
 
+.primary-btn:visited {
+  color: #04120d;
+}
+
 .primary-btn:hover {
   filter: brightness(1.06);
+  color: #04120d;
+  text-decoration: none;
+}
+
+.primary-btn:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 3px;
 }
 
 .working,
@@ -209,6 +240,22 @@ h2 .sub {
   border-left: 3px solid var(--accent);
   background: rgba(61, 155, 122, 0.1);
   animation: fade-up 0.4s ease-out;
+}
+
+.working-item a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.working-item a:visited {
+  color: var(--ink);
+}
+
+.working-item a:hover {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .working-item .pulse {
@@ -310,12 +357,18 @@ h2 .sub {
 }
 
 .request-id a {
-  color: inherit;
+  color: var(--ink);
   text-decoration: none;
+}
+
+.request-id a:visited {
+  color: var(--ink);
 }
 
 .request-id a:hover {
   color: var(--accent-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .meta-row {
@@ -345,6 +398,14 @@ h2 .sub {
   color: var(--accent-2);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.links a:visited {
+  color: var(--accent-2);
+}
+
+.links a:hover {
+  color: #e0c57a;
 }
 
 .badge {
@@ -413,6 +474,21 @@ h2 .sub {
 .shipped a,
 .cursor-list a {
   color: var(--ink);
+  text-decoration: none;
+}
+
+.feed a:visited,
+.shipped a:visited,
+.cursor-list a:visited {
+  color: var(--ink);
+}
+
+.feed a:hover,
+.shipped a:hover,
+.cursor-list a:hover {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .muted {
