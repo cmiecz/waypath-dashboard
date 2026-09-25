@@ -134,7 +134,15 @@ export function mountRoutes(
       res.status(401).json({ error: "unauthorized" });
       return;
     }
-    const body = req.body as {
+    const rawBody = req.body;
+    if (rawBody == null || typeof rawBody !== "object" || Array.isArray(rawBody)) {
+      res.status(400).json({
+        error:
+          'Expected JSON object {bot, issue, action: "started"|"finished"|"note", message, url?}',
+      });
+      return;
+    }
+    const body = rawBody as {
       bot?: unknown;
       issue?: unknown;
       action?: unknown;

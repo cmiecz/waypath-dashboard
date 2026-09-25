@@ -107,4 +107,26 @@ describe("POST /api/events auth", () => {
     const listed = await store.list(10);
     expect(listed.some((e) => e.issue === 30)).toBe(true);
   });
+
+  it("returns 400 when the body is missing or not a JSON object", async () => {
+    const empty = await fetch(`${base}/api/events`, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer bot-token-abc",
+        "Content-Type": "application/json",
+      },
+      body: "",
+    });
+    expect(empty.status).toBe(400);
+
+    const arrayBody = await fetch(`${base}/api/events`, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer bot-token-abc",
+        "Content-Type": "application/json",
+      },
+      body: "[]",
+    });
+    expect(arrayBody.status).toBe(400);
+  });
 });
