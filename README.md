@@ -182,10 +182,13 @@ Captured with `DEMO_MODE=true`:
 Open issues use exactly one of:
 
 - `status: reported` → Product Architect
+- `status: waiting on input` → waiting on Matt / Cass / whoever `waiting on: *` names (or “Waiting on input” if unnamed)
 - `status: being built` → Product Architect
 - `status: ready to test` → QA Engineer
 - `status: needs fix` → Product Architect
 - `status: qa passed` → Release Engineer
 - `status: ready to merge` → Cass
+
+Optional assignment labels (do not change stage): `waiting on: matt`, `waiting on: cass`, or any `waiting on: <name>`.
 
 Missing status labels are treated as **Reported**. `product-intake` is ignored. Closed as **completed** → Shipped; **not planned** are omitted from Shipped.

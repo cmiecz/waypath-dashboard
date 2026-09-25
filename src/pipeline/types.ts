@@ -26,6 +26,9 @@ export interface RequestCard {
   displayId: string;
   stage: StageId;
   owner: string;
+  /** Full assignment line, e.g. "With QA Engineer" or "Waiting on Matt and Cass". */
+  assignmentText: string;
+  waitingOn: string[];
   htmlUrl: string;
   stageEnteredAt: string | null;
   latestActivity: string | null;
@@ -71,6 +74,7 @@ export interface ShippedItem {
 
 export interface StageCounts {
   reported: number;
+  waiting_on_input: number;
   being_built: number;
   ready_to_test: number;
   needs_fix: number;

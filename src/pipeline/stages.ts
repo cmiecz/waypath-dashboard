@@ -1,5 +1,6 @@
 export type StageId =
   | "reported"
+  | "waiting_on_input"
   | "being_built"
   | "ready_to_test"
   | "needs_fix"
@@ -21,6 +22,13 @@ export const STAGES: StageDef[] = [
     githubLabel: "status: reported",
     owner: "Product Architect",
     columnTitle: "Reported",
+  },
+  {
+    id: "waiting_on_input",
+    label: "Waiting on input",
+    githubLabel: "status: waiting on input",
+    owner: "input",
+    columnTitle: "Waiting on input",
   },
   {
     id: "being_built",
@@ -91,6 +99,72 @@ export function stageFromLabels(labelNames: string[]): StageId {
 
 export function stageOwner(stage: StageId): string {
   return STAGE_BY_ID[stage].owner;
+}
+
+/** Capitalize a waiting-on name: "matt" → "Matt". */
+export function capitalizeWaitingName(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/**
+ * Collect `waiting on: <name>` labels. Does not affect stage mapping.
+ * Names are capitalized; duplicates (case-insensitive) are dropped.
+ */
+export function waitingOnNamesFromLabels(labelNames: string[]): string[] {
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of labelNames) {
+    const m = raw.trim().match(/^waiting on:\s*(.+)$/i);
+    if (!m?.[1]) continue;
+    const name = capitalizeWaitingName(m[1]);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    names.push(name);
+  }
+  return names;
+}
+
+export function isWaitingOnCass(labelNames: string[]): boolean {
+  return waitingOnNamesFromLabels(labelNames).some(
+    (n) => n.toLowerCase() === "cass",
+  );
+}
+
+/** Card assignment line: "With …" or "Waiting on …". */
+export function assignmentTextForCard(
+  stage: StageId,
+  labelNames: string[],
+): string {
+  if (stage === "waiting_on_input") {
+    const names = waitingOnNamesFromLabels(labelNames);
+    if (names.length === 0) return "Waiting on input";
+    if (names.length === 1) return `Waiting on ${names[0]}`;
+    if (names.length === 2) return `Waiting on ${names[0]} and ${names[1]}`;
+    const last = names[names.length - 1]!;
+    return `Waiting on ${names.slice(0, -1).join(", ")}, and ${last}`;
+  }
+  return `With ${stageOwner(stage)}`;
+}
+
+export function isEscalatedOrBlocked(labelNames: string[]): boolean {
+  return labelNames.some((n) => {
+    const l = normalizeLabelName(n);
+    // `waiting on: *` is assignment metadata, never an escalation signal
+    if (l.startsWith("waiting on:")) return false;
+    return (
+      l.includes("escalat") ||
+      l.includes("blocked") ||
+      l === "needs cass" ||
+      l === "status: blocked"
+    );
+  });
 }
 
 export function displayRequestId(
@@ -175,16 +249,4 @@ export function parseQaResult(text: string | null | undefined): QaResult {
   if (QA_PASS_RE.test(text)) return "pass";
   if (QA_FAIL_RE.test(text)) return "fail";
   return null;
-}
-
-export function isEscalatedOrBlocked(labelNames: string[]): boolean {
-  return labelNames.some((n) => {
-    const l = normalizeLabelName(n);
-    return (
-      l.includes("escalat") ||
-      l.includes("blocked") ||
-      l === "needs cass" ||
-      l === "status: blocked"
-    );
-  });
 }

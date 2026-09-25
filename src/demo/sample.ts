@@ -1,4 +1,10 @@
-import { STAGES, displayRequestId, type StageId } from "../pipeline/stages.js";
+import {
+  STAGES,
+  displayRequestId,
+  assignmentTextForCard,
+  waitingOnNamesFromLabels,
+  type StageId,
+} from "../pipeline/stages.js";
 import { computeCounts } from "../github/pipeline.js";
 import type {
   ActivityItem,
@@ -22,10 +28,21 @@ function daysAgo(n: number): string {
   return hoursAgo(n * 24);
 }
 
-function card(partial: Omit<RequestCard, "displayId"> & { displayId?: string }): RequestCard {
+function card(
+  partial: Omit<RequestCard, "displayId" | "assignmentText" | "waitingOn"> & {
+    displayId?: string;
+    assignmentText?: string;
+    waitingOn?: string[];
+  },
+): RequestCard {
+  const labels = partial.labels ?? [];
   return {
     ...partial,
-    displayId: partial.displayId ?? displayRequestId(partial.issueNumber, partial.title),
+    displayId:
+      partial.displayId ?? displayRequestId(partial.issueNumber, partial.title),
+    assignmentText:
+      partial.assignmentText ?? assignmentTextForCard(partial.stage, labels),
+    waitingOn: partial.waitingOn ?? waitingOnNamesFromLabels(labels),
   };
 }
 
@@ -52,6 +69,31 @@ export function buildDemoSnapshot(): DashboardSnapshot {
       workingBot: null,
       escalated: false,
       labels: ["status: reported"],
+    }),
+  ];
+
+  columns.waiting_on_input = [
+    card({
+      issueNumber: 35,
+      title: "Advisor dashboard filter presets",
+      stage: "waiting_on_input",
+      owner: "input",
+      htmlUrl: "https://github.com/cmiecz/waypathacademics/issues/35",
+      stageEnteredAt: hoursAgo(8),
+      latestActivity:
+        "Product Architect: Plan ready — need Cass and Matt to confirm scope",
+      latestActivityAt: hoursAgo(8),
+      reviewUrl: null,
+      previewUrl: null,
+      qaResult: null,
+      workingNow: false,
+      workingBot: null,
+      escalated: false,
+      labels: [
+        "status: waiting on input",
+        "waiting on: matt",
+        "waiting on: cass",
+      ],
     }),
   ];
 
@@ -120,7 +162,8 @@ export function buildDemoSnapshot(): DashboardSnapshot {
       owner: "Product Architect",
       htmlUrl: "https://github.com/cmiecz/waypathacademics/issues/22",
       stageEnteredAt: hoursAgo(6),
-      latestActivity: "QA Engineer: QA FAIL — SMS not sent for international numbers",
+      latestActivity:
+        "QA Engineer: QA FAIL — SMS not sent for international numbers",
       latestActivityAt: hoursAgo(6),
       reviewUrl: "https://github.com/cmiecz/waypathacademics/pull/79",
       previewUrl: "https://waypath-pr-79.onrender.com",
@@ -205,7 +248,8 @@ export function buildDemoSnapshot(): DashboardSnapshot {
       id: "demo-2",
       at: minutesAgo(12),
       actor: "product-architect-bot",
-      summary: "Commented on #30 Lead sources: Preview ready at https://waypath-pr-91.onrender.com",
+      summary:
+        "Commented on #30 Lead sources: Preview ready at https://waypath-pr-91.onrender.com",
       url: "https://github.com/cmiecz/waypathacademics/issues/30",
       source: "github",
       issueNumber: 30,

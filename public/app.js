@@ -1,5 +1,6 @@
 const STAGE_ORDER = [
   ["reported", "Reported"],
+  ["waiting_on_input", "Waiting on input"],
   ["being_built", "Being built"],
   ["ready_to_test", "Ready to test"],
   ["needs_fix", "Needs fix"],
@@ -71,6 +72,7 @@ function renderCounts(counts) {
   const items = [
     ["Open", counts.open],
     ["Reported", counts.reported],
+    ["Waiting", counts.waiting_on_input],
     ["Building", counts.being_built],
     ["QA", counts.ready_to_test],
     ["Needs fix", counts.needs_fix],
@@ -110,7 +112,7 @@ function renderCard(card) {
   return `<article class="request${card.workingNow ? " working" : ""}">
     <p class="request-id"><a href="${esc(card.htmlUrl)}" target="_blank" rel="noopener">${esc(card.displayId)}</a></p>
     <div class="meta-row">
-      <span>With ${esc(card.owner)}</span>
+      <span>${esc(card.assignmentText || `With ${card.owner}`)}</span>
       <span>·</span>
       <span>${esc(durationInStage(card.stageEnteredAt))} in stage</span>
       ${qa}${live}

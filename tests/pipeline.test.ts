@@ -8,6 +8,9 @@ import {
   parseQaResult,
   shortTitle,
   isEscalatedOrBlocked,
+  waitingOnNamesFromLabels,
+  assignmentTextForCard,
+  isWaitingOnCass,
 } from "../src/pipeline/stages.js";
 import { findPrForIssue } from "../src/github/pipeline.js";
 import { isUserAllowed, verifyBearerToken, signSession, verifySession } from "../src/config.js";
@@ -16,6 +19,9 @@ import { MemoryEventStore } from "../src/events/store.js";
 describe("stage mapping", () => {
   it("maps each status label to the right stage", () => {
     expect(stageFromLabels(["status: reported"])).toBe("reported");
+    expect(stageFromLabels(["status: waiting on input"])).toBe(
+      "waiting_on_input",
+    );
     expect(stageFromLabels(["status: being built"])).toBe("being_built");
     expect(stageFromLabels(["status: ready to test"])).toBe("ready_to_test");
     expect(stageFromLabels(["status: needs fix"])).toBe("needs_fix");
@@ -32,6 +38,13 @@ describe("stage mapping", () => {
     );
   });
 
+  it("does not treat waiting on: labels as a stage by themselves", () => {
+    expect(stageFromLabels(["waiting on: matt"])).toBe("reported");
+    expect(
+      stageFromLabels(["status: being built", "waiting on: cass"]),
+    ).toBe("being_built");
+  });
+
   it("is case-insensitive on labels", () => {
     expect(stageFromLabels(["Status: Ready To Test"])).toBe("ready_to_test");
   });
@@ -41,6 +54,62 @@ describe("stage mapping", () => {
     expect(isEscalatedOrBlocked(["status: blocked"])).toBe(true);
     expect(isEscalatedOrBlocked(["needs cass"])).toBe(true);
     expect(isEscalatedOrBlocked(["status: reported"])).toBe(false);
+  });
+
+  it("does not treat waiting on: labels as escalations", () => {
+    expect(isEscalatedOrBlocked(["waiting on: cass"])).toBe(false);
+    expect(
+      isEscalatedOrBlocked(["status: waiting on input", "waiting on: matt"]),
+    ).toBe(false);
+  });
+});
+
+describe("waiting on labels", () => {
+  it("parses waiting on: names case-insensitively and capitalizes them", () => {
+    expect(
+      waitingOnNamesFromLabels([
+        "status: waiting on input",
+        "waiting on: matt",
+        "waiting on: CASS",
+      ]),
+    ).toEqual(["Matt", "Cass"]);
+  });
+
+  it("dedupes names and supports arbitrary waiting on: people", () => {
+    expect(
+      waitingOnNamesFromLabels([
+        "waiting on: matt",
+        "Waiting On: Matt",
+        "waiting on: alex",
+      ]),
+    ).toEqual(["Matt", "Alex"]);
+  });
+
+  it("builds the card assignment text", () => {
+    expect(
+      assignmentTextForCard("waiting_on_input", ["status: waiting on input"]),
+    ).toBe("Waiting on input");
+    expect(
+      assignmentTextForCard("waiting_on_input", [
+        "status: waiting on input",
+        "waiting on: matt",
+      ]),
+    ).toBe("Waiting on Matt");
+    expect(
+      assignmentTextForCard("waiting_on_input", [
+        "status: waiting on input",
+        "waiting on: matt",
+        "waiting on: cass",
+      ]),
+    ).toBe("Waiting on Matt and Cass");
+    expect(
+      assignmentTextForCard("ready_to_test", ["status: ready to test"]),
+    ).toBe("With QA Engineer");
+  });
+
+  it("detects waiting on Cass for Needs Cass counts", () => {
+    expect(isWaitingOnCass(["waiting on: cass"])).toBe(true);
+    expect(isWaitingOnCass(["waiting on: matt"])).toBe(false);
   });
 });
 

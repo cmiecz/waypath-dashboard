@@ -342,7 +342,7 @@ h2 .sub {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(6, minmax(200px, 1fr));
+  grid-template-columns: repeat(7, minmax(200px, 1fr));
   gap: 0.75rem;
   overflow-x: auto;
   padding-bottom: 0.35rem;
@@ -361,6 +361,11 @@ h2 .sub {
 
 .column[data-stage="reported"] {
   border-top-color: var(--slate);
+}
+
+.column[data-stage="waiting_on_input"] {
+  border-top-color: var(--gold);
+  background: #fbf7ee;
 }
 
 .column[data-stage="being_built"] {
@@ -693,6 +698,6 @@ h2 .sub {
     justify-content: flex-start;
   }
   .board {
-    grid-template-columns: repeat(6, minmax(230px, 80vw));
+    grid-template-columns: repeat(7, minmax(230px, 80vw));
   }
 }
