@@ -35,7 +35,7 @@ cp .env.example .env
 npm install
 npm test
 npm run build
-npm start
+npm start   # loads .env via dotenv
 ```
 
 Open http://localhost:10000 — you should see a **Sample data** banner.
@@ -152,7 +152,7 @@ curl -X POST "$BASE_URL/api/events" \
 ## Deploy on Render
 
 1. Push this repo to GitHub
-2. Render → **New → Blueprint** and select the repo (`render.yaml` is included)
+2. Render → **New → Blueprint** and select the repo (`render.yaml` is included). Build command is `npm ci --include=dev && npm run build` so TypeScript is available during compile (Render’s default install omits devDependencies).
 3. Fill sync:false env vars: `BASE_URL`, OAuth credentials, `GITHUB_TOKEN`, optional webhook secret / Cursor key
 4. Set the OAuth callback to `{BASE_URL}/auth/github/callback`
 5. Health check path: `/healthz` (already in the Blueprint)

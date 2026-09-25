@@ -93,21 +93,31 @@ export function stageOwner(stage: StageId): string {
   return STAGE_BY_ID[stage].owner;
 }
 
-export function displayRequestId(issueNumber: number, title: string): string {
+export function displayRequestId(
+  issueNumber: number,
+  title: string | null | undefined,
+): string {
   const short = shortTitle(title);
-  return `#${issueNumber} ${short}`;
+  return short ? `#${issueNumber} ${short}` : `#${issueNumber}`;
 }
 
 /** Strip leading "#N" / "Fixes #N" style prefixes from titles for display. */
-export function shortTitle(title: string): string {
-  return title
-    .replace(/^#\d+\s*[:\-]?\s*/i, "")
-    .replace(/^(fix|closes|close|resolve[sd]?)\s+#\d+\s*[:\-]?\s*/i, "")
-    .trim() || title.trim();
+export function shortTitle(title: string | null | undefined): string {
+  if (title == null) return "";
+  const trimmed = String(title);
+  return (
+    trimmed
+      .replace(/^#\d+\s*[:\-]?\s*/i, "")
+      .replace(/^(fix|closes|close|resolve[sd]?)\s+#\d+\s*[:\-]?\s*/i, "")
+      .trim() || trimmed.trim()
+  );
 }
 
 /** Extract issue number from PR title like "#30 Lead sources" or "Fixes #30: …". */
-export function issueNumberFromPrTitle(title: string): number | null {
+export function issueNumberFromPrTitle(
+  title: string | null | undefined,
+): number | null {
+  if (title == null || title === "") return null;
   const hashFirst = title.match(/^#(\d+)\b/);
   if (hashFirst) return Number(hashFirst[1]);
   const fixes = title.match(/\b(?:fixes|closes|close|resolve[sd]?)\s+#(\d+)\b/i);

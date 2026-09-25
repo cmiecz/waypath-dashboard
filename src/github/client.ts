@@ -57,6 +57,8 @@ export interface GhTimelineItem {
 type CacheEntry = {
   etag?: string;
   data: unknown;
+  /** For paginated responses: Link rel=next URL captured with the page body. */
+  nextUrl?: string | null;
   fetchedAt: number;
 };
 
@@ -72,6 +74,14 @@ export class GitHubClient {
 
   get repoFullName(): string {
     return `${this.owner}/${this.repo}`;
+  }
+
+  get ownerName(): string {
+    return this.owner;
+  }
+
+  get repoName(): string {
+    return this.repo;
   }
 
   getRateRemaining(): number | null {
@@ -113,44 +123,68 @@ export class GitHubClient {
     return data;
   }
 
+  private parseNextLink(linkHeader: string | null): string | null {
+    if (!linkHeader) return null;
+    const nextPart = linkHeader
+      .split(",")
+      .find((part: string) => part.includes('rel="next"'));
+    if (!nextPart) return null;
+    const match = nextPart.match(/<([^>]+)>/);
+    return match?.[1] ?? null;
+  }
+
+  /** Fetches one page with ETag caching (shared with poll refreshes). */
+  private async requestPage<T>(url: string): Promise<{
+    items: T;
+    nextUrl: string | null;
+  }> {
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "waypath-dashboard",
+    };
+    if (this.token) headers.Authorization = `Bearer ${this.token}`;
+
+    const cached = this.cache.get(url);
+    if (cached?.etag) headers["If-None-Match"] = cached.etag;
+
+    const res: Response = await fetch(url, { headers });
+    const rem = res.headers.get("x-ratelimit-remaining");
+    if (rem) this.rateRemaining = Number(rem);
+
+    if (res.status === 304 && cached) {
+      return {
+        items: cached.data as T,
+        nextUrl: cached.nextUrl ?? null,
+      };
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`GitHub ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const items = (await res.json()) as T;
+    const nextUrl = this.parseNextLink(res.headers.get("link"));
+    const etag = res.headers.get("etag") ?? undefined;
+    this.cache.set(url, { etag, data: items, nextUrl, fetchedAt: Date.now() });
+    return { items, nextUrl };
+  }
+
   private async requestAllPages<T>(
     path: string,
     maxPages = 5,
   ): Promise<T[]> {
     const results: T[] = [];
-    let nextUrl: string | null = path.startsWith("http")
+    let cursor: string | null = path.startsWith("http")
       ? path
       : `https://api.github.com${path}`;
     let page = 0;
-    while (nextUrl && page < maxPages) {
+    while (cursor && page < maxPages) {
       page += 1;
-      const requestUrl: string = nextUrl;
-      const headers: Record<string, string> = {
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "waypath-dashboard",
-      };
-      if (this.token) headers.Authorization = `Bearer ${this.token}`;
-      const res: Response = await fetch(requestUrl, { headers });
-      const rem = res.headers.get("x-ratelimit-remaining");
-      if (rem) this.rateRemaining = Number(rem);
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`GitHub ${res.status}: ${text.slice(0, 200)}`);
-      }
-      const chunk = (await res.json()) as T[];
-      results.push(...chunk);
-      const linkHeader: string | null = res.headers.get("link");
-      nextUrl = null;
-      if (linkHeader) {
-        const nextPart = linkHeader
-          .split(",")
-          .find((part: string) => part.includes('rel="next"'));
-        if (nextPart) {
-          const match = nextPart.match(/<([^>]+)>/);
-          if (match?.[1]) nextUrl = match[1];
-        }
-      }
+      const pageUrl: string = cursor;
+      const pageResult: { items: T[]; nextUrl: string | null } =
+        await this.requestPage<T[]>(pageUrl);
+      results.push(...pageResult.items);
+      cursor = pageResult.nextUrl;
     }
     return results;
   }

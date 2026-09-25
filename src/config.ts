@@ -5,49 +5,69 @@ import {
   createHash,
 } from "node:crypto";
 
+/** Read an env var and trim surrounding whitespace (Render UI sometimes adds spaces). */
+export function env(name: string, fallback?: string): string {
+  const raw = process.env[name];
+  if (raw === undefined) {
+    return fallback ?? "";
+  }
+  return raw.trim();
+}
+
 function required(name: string, fallback?: string): string {
-  const v = process.env[name] ?? fallback;
-  if (v === undefined || v === "") {
-    if (process.env.DEMO_MODE === "true" && fallback === undefined) {
-      // Allow missing secrets in demo mode for local UI screenshots
+  const v = env(name, fallback);
+  if (v === "") {
+    if (env("DEMO_MODE", "false").toLowerCase() === "true" && fallback === undefined) {
       return `demo-${name.toLowerCase()}`;
     }
-    if (fallback !== undefined) return fallback;
+    if (fallback !== undefined) return fallback.trim();
     throw new Error(`Missing required env var: ${name}`);
   }
   return v;
 }
 
+/** Normalize public origin: trim + drop a single trailing slash. */
+export function normalizeBaseUrl(raw: string, fallbackPort = 10000): string {
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  return trimmed || `http://localhost:${fallbackPort}`;
+}
+
 export function loadConfig() {
-  const demoMode = (process.env.DEMO_MODE ?? "false").toLowerCase() === "true";
-  const allowedUsers = (process.env.ALLOWED_GITHUB_USERS ?? "cmiecz,mwaldau71")
+  const demoMode = env("DEMO_MODE", "false").toLowerCase() === "true";
+  const allowedUsers = env("ALLOWED_GITHUB_USERS", "cmiecz,mwaldau71")
     .split(",")
     .map((u) => u.trim().toLowerCase())
     .filter(Boolean);
 
-  const port = Number(process.env.PORT ?? 10000);
-  const baseUrl = (process.env.BASE_URL ?? `http://localhost:${port}`).replace(
-    /\/$/,
-    "",
+  const port = Number(env("PORT", "10000") || "10000");
+  const baseUrl = normalizeBaseUrl(
+    env("BASE_URL", `http://localhost:${port}`),
+    port,
   );
 
   return {
     port,
     baseUrl,
     demoMode,
-    nodeEnv: process.env.NODE_ENV ?? "development",
-    sessionSecret: process.env.SESSION_SECRET || (demoMode ? "demo-session-secret-change-me" : required("SESSION_SECRET")),
-    githubClientId: process.env.GITHUB_CLIENT_ID || (demoMode ? "demo-client-id" : ""),
-    githubClientSecret: process.env.GITHUB_CLIENT_SECRET || (demoMode ? "demo-client-secret" : ""),
+    nodeEnv: env("NODE_ENV", "development") || "development",
+    sessionSecret:
+      env("SESSION_SECRET") ||
+      (demoMode ? "demo-session-secret-change-me" : required("SESSION_SECRET")),
+    githubClientId:
+      env("GITHUB_CLIENT_ID") || (demoMode ? "demo-client-id" : ""),
+    githubClientSecret:
+      env("GITHUB_CLIENT_SECRET") || (demoMode ? "demo-client-secret" : ""),
     allowedUsers,
-    githubToken: process.env.GITHUB_TOKEN || "",
-    githubOwner: process.env.GITHUB_OWNER || "cmiecz",
-    githubRepo: process.env.GITHUB_REPO || "waypathacademics",
-    githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET || "",
-    botEventsToken: process.env.BOT_EVENTS_TOKEN || (demoMode ? "demo-bot-token" : required("BOT_EVENTS_TOKEN")),
-    databaseUrl: process.env.DATABASE_URL || "",
-    pollIntervalMs: Number(process.env.GITHUB_POLL_INTERVAL_MS ?? 45_000),
-    cursorApiKey: process.env.CURSOR_API_KEY || "",
+    githubToken: env("GITHUB_TOKEN"),
+    githubOwner: env("GITHUB_OWNER", "cmiecz") || "cmiecz",
+    githubRepo: env("GITHUB_REPO", "waypathacademics") || "waypathacademics",
+    githubWebhookSecret: env("GITHUB_WEBHOOK_SECRET"),
+    botEventsToken:
+      env("BOT_EVENTS_TOKEN") ||
+      (demoMode ? "demo-bot-token" : required("BOT_EVENTS_TOKEN")),
+    databaseUrl: env("DATABASE_URL"),
+    pollIntervalMs: Number(env("GITHUB_POLL_INTERVAL_MS", "45000") || "45000"),
+    cursorApiKey: env("CURSOR_API_KEY"),
     timezone: "America/New_York" as const,
   };
 }
