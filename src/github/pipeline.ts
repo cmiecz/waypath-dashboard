@@ -11,6 +11,9 @@ import {
   parseQaResult,
   isEscalatedOrBlocked,
   shortTitle,
+  assignmentTextForCard,
+  waitingOnNamesFromLabels,
+  isWaitingOnCass,
   type StageId,
 } from "../pipeline/stages.js";
 import type {
@@ -236,6 +239,8 @@ export async function buildDashboard(opts: {
         displayId: displayRequestId(issue.number, issue.title),
         stage,
         owner: stageOwner(stage),
+        assignmentText: assignmentTextForCard(stage, labels),
+        waitingOn: waitingOnNamesFromLabels(labels),
         htmlUrl: issue.html_url,
         stageEnteredAt: entered ?? issue.created_at,
         latestActivity,
@@ -324,6 +329,7 @@ export function computeCounts(
 ): StageCounts {
   const counts: StageCounts = {
     reported: columns.reported.length,
+    waiting_on_input: columns.waiting_on_input.length,
     being_built: columns.being_built.length,
     ready_to_test: columns.ready_to_test.length,
     needs_fix: columns.needs_fix.length,
@@ -335,10 +341,21 @@ export function computeCounts(
   };
   let open = 0;
   let needsCass = columns.ready_to_merge.length;
+  const countedIssues = new Set<number>(
+    columns.ready_to_merge.map((c) => c.issueNumber),
+  );
   for (const stage of STAGES) {
     open += columns[stage.id].length;
     for (const card of columns[stage.id]) {
-      if (card.escalated && stage.id !== "ready_to_merge") needsCass += 1;
+      if (countedIssues.has(card.issueNumber)) continue;
+      const needs =
+        (card.escalated && stage.id !== "ready_to_merge") ||
+        isWaitingOnCass(card.labels) ||
+        card.waitingOn.some((n) => n.toLowerCase() === "cass");
+      if (needs) {
+        needsCass += 1;
+        countedIssues.add(card.issueNumber);
+      }
     }
   }
   counts.open = open;
