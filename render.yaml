@@ -1,0 +1,51 @@
+# Exported from https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: waypath-dashboard
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "false"
+      - key: BASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: ALLOWED_GITHUB_USERS
+        value: cmiecz,mwaldau71
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_OWNER
+        value: cmiecz
+      - key: GITHUB_REPO
+        value: waypathacademics
+      - key: BOT_EVENTS_TOKEN
+        generateValue: true
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+      - key: GITHUB_POLL_INTERVAL_MS
+        value: "45000"
+      - key: CURSOR_API_KEY
+        sync: false
+      # Optional: uncomment and wire a Postgres database for durable bot events.
+      # Without DATABASE_URL, bot events are kept in memory (lost on restart).
+      # - key: DATABASE_URL
+      #   fromDatabase:
+      #     name: waypath-dashboard-db
+      #     property: connectionString
+
+# Optional Postgres (uncomment to provision):
+# databases:
+#   - name: waypath-dashboard-db
+#     plan: basic-256mb
+#     region: oregon
