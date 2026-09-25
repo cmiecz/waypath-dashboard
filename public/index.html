@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WayPath Pipeline</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="demo-banner" class="demo-banner hidden" role="status">
+      Sample data — DEMO_MODE is on. Not live GitHub.
+    </div>
+    <header class="top">
+      <div class="brand-block">
+        <p class="brand">WayPath</p>
+        <h1 class="page-title">Dev pipeline</h1>
+      </div>
+      <div class="header-meta">
+        <div id="counts" class="counts" aria-label="Stage counts"></div>
+        <div class="header-actions">
+          <span id="updated" class="updated"></span>
+          <span id="user-label" class="user-label"></span>
+          <form method="post" action="/auth/logout" class="logout-form">
+            <button type="submit" class="ghost-btn">Sign out</button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <section class="working" aria-label="Working now">
+      <h2>Working now</h2>
+      <div id="working-now" class="working-list"></div>
+    </section>
+
+    <section class="board-section" aria-label="Pipeline board">
+      <h2>Pipeline</h2>
+      <div id="board" class="board"></div>
+    </section>
+
+    <div class="lower">
+      <section class="feed-section" aria-label="Activity feed">
+        <h2>Activity</h2>
+        <ol id="activity" class="feed"></ol>
+      </section>
+      <section class="shipped-section" aria-label="Shipped">
+        <h2>Shipped <span class="sub">last 14 days</span></h2>
+        <ul id="shipped" class="shipped"></ul>
+      </section>
+      <section id="cursor-section" class="cursor-section hidden" aria-label="Cursor agents">
+        <h2>Cursor agents</h2>
+        <p id="cursor-error" class="muted hidden"></p>
+        <ul id="cursor-agents" class="cursor-list"></ul>
+      </section>
+    </div>
+
+    <footer class="foot">
+      <span>Times in America/New_York (ET)</span>
+      <span id="live-status">Connecting…</span>
+    </footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
